@@ -1,3 +1,5 @@
+# system-uname
+
 ## Description
 A Crystal interface for getting operating system information. The name
 comes from the Unix 'uname' command.
@@ -6,12 +8,12 @@ comes from the Unix 'uname' command.
 Add this to your shard.yml file:
 ```
 dependencies:
-  uname:
-    github: djberg96/crystal-uname
+  system-uname:
+    github: djberg96/crystal-sys-uname
 ```
 ## Synopsis
 ```crystal
-require "uname"
+require "system-uname"
 
 # Get full information about your system.
 p System.uname

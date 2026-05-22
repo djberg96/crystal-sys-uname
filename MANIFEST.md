@@ -2,7 +2,8 @@
 * MANIFEST.md
 * README.md
 * shard.yml
+* src/system/uname.cr
 * spec/uname_spec.cr
-* src/uname.cr
+* src/system-uname.cr
 * src/unix/uname.cr
 * src/windows/uname.cr

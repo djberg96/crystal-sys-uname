@@ -1,11 +1,11 @@
-name: uname
-version: 0.2.2
+name: system-uname
+version: 0.3.0
 description: An interface for getting OS information
 
 authors:
   - Daniel Berger <djberg96@gmail.com>
 
-repository: https://github.com:djberg96/crystal-uname
+repository: https://github.com/djberg96/crystal-sys-uname
 
 crystal: ">= 1.2.0"
 

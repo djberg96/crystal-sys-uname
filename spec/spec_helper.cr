@@ -1,2 +1,2 @@
 require "spec"
-require "../src/uname.cr"
+require "../src/system-uname.cr"

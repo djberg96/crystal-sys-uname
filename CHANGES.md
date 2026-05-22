@@ -1,3 +1,8 @@
+## 0.3.0
+* Renamed the shard to `system-uname`.
+* Changed the canonical require path to `require "system-uname"`.
+* Added FreeBSD support for the `model` method and FreeBSD-friendly `uname` lookups.
+
 ## 0.2.2
 * Added FreeBSD support for the `model` method.
 
