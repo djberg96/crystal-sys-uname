@@ -35,21 +35,16 @@ module System
   end
 
   struct Uname
-    getter cstruct
+    getter sysname, nodename, release, version, machine
 
-    def initialize(@cstruct : LibC::Uname)
+    def initialize(
+      @sysname : String,
+      @nodename : String,
+      @release : String,
+      @version : String,
+      @machine : String
+    )
     end
-
-    macro get(*props)
-      {% for prop in props %}
-        def {{prop}}
-          str = String.new(cstruct.{{prop}}.to_unsafe)
-          str.split('\0').first
-        end
-      {% end %}
-    end
-
-    get sysname, nodename, release, version, machine
 
     def to_s(io : IO) : Nil
       io << "System::Uname("
@@ -80,7 +75,13 @@ module System
     if LibC.uname(pointerof(uname_struct)) < 0
       raise RuntimeError.from_errno("uname")
     else
-      Uname.new(uname_struct)
+      Uname.new(
+        string_from_buffer(uname_struct.sysname),
+        string_from_buffer(uname_struct.nodename),
+        string_from_buffer(uname_struct.release),
+        string_from_buffer(uname_struct.version),
+        string_from_buffer(uname_struct.machine)
+      )
     end
   end
 
@@ -131,5 +132,17 @@ module System
     {% else %}
       raise "the model method is unsupported on this platform"
     {% end %}
+  end
+
+  private def self.string_from_buffer(buffer) : String
+    ptr = buffer.to_unsafe.as(UInt8*)
+    size = buffer.size
+    length = 0
+
+    while length < size && ptr[length] != 0
+      length += 1
+    end
+
+    String.new(ptr, length)
   end
 end
