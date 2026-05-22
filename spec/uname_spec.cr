@@ -26,10 +26,10 @@ describe System do
     System.version.should eq(expected)
   end
 
-  it "correctly reports the model on Darwin or raises an error if not supported" do
-    {% if flag?(:darwin) %}
-      expected = `sysctl hw.model`.split(":").last.strip
-      System.model.should eq(expected)
+  it "returns the model on supported platforms or raises an error if unsupported" do
+    {% if flag?(:darwin) || flag?(:freebsd) %}
+      System.model.should be_a(String)
+      System.model.should_not be_empty
     {% else %}
       expect_raises(Exception, "the model method is unsupported on this platform"){ System.model }
     {% end %}

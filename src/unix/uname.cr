@@ -32,24 +32,23 @@ module System
     {% unless flag?(:linux) %}
       fun sysctl(name : Int32*, namelen : UInt32, oldp : Void*, oldlenp : ::LibC::SizeT*, newp : Void*, newlen : ::LibC::SizeT) : Int32
     {% end %}
+
+    {% if flag?(:freebsd) %}
+      fun sysctlbyname(name : UInt8*, oldp : Void*, oldlenp : ::LibC::SizeT*, newp : Void*, newlen : ::LibC::SizeT) : Int32
+    {% end %}
   end
 
   struct Uname
-    getter cstruct
+    getter sysname, nodename, release, version, machine
 
-    def initialize(@cstruct : LibC::Uname)
+    def initialize(
+      @sysname : String,
+      @nodename : String,
+      @release : String,
+      @version : String,
+      @machine : String
+    )
     end
-
-    macro get(*props)
-      {% for prop in props %}
-        def {{prop}}
-          str = String.new(cstruct.{{prop}}.to_unsafe)
-          str.split('\0').first
-        end
-      {% end %}
-    end
-
-    get sysname, nodename, release, version, machine
 
     def to_s(io : IO) : Nil
       io << "System::Uname("
@@ -75,13 +74,29 @@ module System
   # * machine
   #
   def self.uname : System::Uname
+    {% if flag?(:freebsd) %}
+      Uname.new(
+        sysctl_string_by_name("kern.ostype"),
+        sysctl_string_by_name("kern.hostname"),
+        sysctl_string_by_name("kern.osrelease"),
+        sysctl_string_by_name("kern.version").chomp,
+        sysctl_string_by_name("hw.machine")
+      )
+    {% else %}
     uname_struct = LibC::Uname.new
 
     if LibC.uname(pointerof(uname_struct)) < 0
       raise RuntimeError.from_errno("uname")
     else
-      Uname.new(uname_struct)
+      Uname.new(
+        string_from_buffer(uname_struct.sysname),
+        string_from_buffer(uname_struct.nodename),
+        string_from_buffer(uname_struct.release),
+        string_from_buffer(uname_struct.version),
+        string_from_buffer(uname_struct.machine)
+      )
     end
+    {% end %}
   end
 
   # Returns the operating system name.
@@ -118,7 +133,7 @@ module System
   # Returns the hardware model name.
   #
   def self.model : String
-    {% if flag?(:darwin) %}
+    {% if flag?(:darwin) || flag?(:freebsd) %}
       mib = Int32[LibC::CTL_HW, LibC::HW_MODEL]
       buf = Bytes.new(64)
       size = ::LibC::SizeT.new(buf.size)
@@ -132,4 +147,34 @@ module System
       raise "the model method is unsupported on this platform"
     {% end %}
   end
+
+  private def self.string_from_buffer(buffer) : String
+    ptr = buffer.to_unsafe.as(UInt8*)
+    size = buffer.size
+    length = 0
+
+    while length < size && ptr[length] != 0
+      length += 1
+    end
+
+    String.new(ptr, length)
+  end
+
+  {% if flag?(:freebsd) %}
+    private def self.sysctl_string_by_name(name : String) : String
+      size = ::LibC::SizeT.new(0)
+
+      if LibC.sysctlbyname(name.to_unsafe, Pointer(Void).null, pointerof(size), Pointer(Void).null, 0) < 0
+        raise RuntimeError.from_errno("sysctlbyname")
+      end
+
+      buf = Bytes.new(size)
+
+      if LibC.sysctlbyname(name.to_unsafe, buf.to_unsafe.as(Void*), pointerof(size), Pointer(Void).null, 0) < 0
+        raise RuntimeError.from_errno("sysctlbyname")
+      end
+
+      String.new(buf.to_unsafe)[0, size - 1]
+    end
+  {% end %}
 end
