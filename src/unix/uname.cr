@@ -118,7 +118,7 @@ module System
   # Returns the hardware model name.
   #
   def self.model : String
-    {% if flag?(:darwin) %}
+    {% if flag?(:darwin) || flag?(:freebsd) %}
       mib = Int32[LibC::CTL_HW, LibC::HW_MODEL]
       buf = Bytes.new(64)
       size = ::LibC::SizeT.new(buf.size)

@@ -23,13 +23,14 @@ p System.release
 p System.version
 p System.machine
 
-p System.model      # Darwin only
+p System.model      # Darwin and FreeBSD only
 p System.domainname # Linux only
 ```
 
 ## Supported Platforms
 * Linux
 * Darwin
+* FreeBSD
 
 ## Future Plans
 Add MS Windows support

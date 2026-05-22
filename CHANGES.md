@@ -1,3 +1,6 @@
+## 0.2.2
+* Added FreeBSD support for the `model` method.
+
 ## 0.2.1
 * Updated the shard.
 
