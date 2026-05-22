@@ -32,6 +32,10 @@ module System
     {% unless flag?(:linux) %}
       fun sysctl(name : Int32*, namelen : UInt32, oldp : Void*, oldlenp : ::LibC::SizeT*, newp : Void*, newlen : ::LibC::SizeT) : Int32
     {% end %}
+
+    {% if flag?(:freebsd) %}
+      fun sysctlbyname(name : UInt8*, oldp : Void*, oldlenp : ::LibC::SizeT*, newp : Void*, newlen : ::LibC::SizeT) : Int32
+    {% end %}
   end
 
   struct Uname
@@ -70,6 +74,15 @@ module System
   # * machine
   #
   def self.uname : System::Uname
+    {% if flag?(:freebsd) %}
+      Uname.new(
+        sysctl_string_by_name("kern.ostype"),
+        sysctl_string_by_name("kern.hostname"),
+        sysctl_string_by_name("kern.osrelease"),
+        sysctl_string_by_name("kern.version"),
+        sysctl_string_by_name("hw.machine")
+      )
+    {% else %}
     uname_struct = LibC::Uname.new
 
     if LibC.uname(pointerof(uname_struct)) < 0
@@ -83,6 +96,7 @@ module System
         string_from_buffer(uname_struct.machine)
       )
     end
+    {% end %}
   end
 
   # Returns the operating system name.
@@ -145,4 +159,22 @@ module System
 
     String.new(ptr, length)
   end
+
+  {% if flag?(:freebsd) %}
+    private def self.sysctl_string_by_name(name : String) : String
+      size = ::LibC::SizeT.new(0)
+
+      if LibC.sysctlbyname(name.to_unsafe, Pointer(Void).null, pointerof(size), Pointer(Void).null, 0) < 0
+        raise RuntimeError.from_errno("sysctlbyname")
+      end
+
+      buf = Bytes.new(size)
+
+      if LibC.sysctlbyname(name.to_unsafe, buf.to_unsafe.as(Void*), pointerof(size), Pointer(Void).null, 0) < 0
+        raise RuntimeError.from_errno("sysctlbyname")
+      end
+
+      String.new(buf.to_unsafe)[0, size - 1]
+    end
+  {% end %}
 end
