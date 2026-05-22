@@ -79,7 +79,7 @@ module System
         sysctl_string_by_name("kern.ostype"),
         sysctl_string_by_name("kern.hostname"),
         sysctl_string_by_name("kern.osrelease"),
-        sysctl_string_by_name("kern.version"),
+        sysctl_string_by_name("kern.version").chomp,
         sysctl_string_by_name("hw.machine")
       )
     {% else %}
